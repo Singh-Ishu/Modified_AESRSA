@@ -7,6 +7,7 @@
 #include <iostream>
 #include <vector>
 #include <cstring>
+#include <openssl/rand.h>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -27,7 +28,8 @@ public:
         TransmissionPayload payload;
         std::vector<uint8_t> K(16);
         std::vector<uint8_t> iv(16);
-        for(int i = 0; i < 16; i++) { K[i] = rand() % 256; iv[i] = rand() % 256; }
+        RAND_bytes(K.data(), 16);
+        RAND_bytes(iv.data(), 16);
         
         payload.encryptedAesKey = MRSA::encrypt(K, public_n, public_e);
         
@@ -42,21 +44,7 @@ public:
 };
 
 int main() {
-    TriplePrimeKey tpk = MRSA::generateKey(1024);
-    SenderNode edgeDevice(tpk.n, tpk.e);
-
-    std::vector<uint8_t> sensorData = {0x48, 0x65, 0x6C, 0x6C, 0x6F}; // "Hello"
-
-    // 2. Encrypt Payload
-    TransmissionPayload payload;
-    try {
-        payload = edgeDevice.transmitData(sensorData);
-    } catch (const std::exception& e) {
-        std::cerr << "Encryption failed: " << e.what() << std::endl;
-        return 1;
-    }
-
-    // 3. Setup Winsock Client
+    // Setup Winsock Client
     WSADATA wsaData;
     WSAStartup(MAKEWORD(2, 2), &wsaData);
     
@@ -73,7 +61,32 @@ int main() {
         return 1;
     }
 
-    // 4. Serialize and Send Data
+    // Receive public key from receiver
+    uint32_t nSize, eSize;
+    recv(clientSocket, reinterpret_cast<char*>(&nSize), sizeof(nSize), 0);
+    std::vector<uint8_t> tpk_n(nSize);
+    recv(clientSocket, reinterpret_cast<char*>(tpk_n.data()), nSize, 0);
+    
+    recv(clientSocket, reinterpret_cast<char*>(&eSize), sizeof(eSize), 0);
+    std::vector<uint8_t> tpk_e(eSize);
+    recv(clientSocket, reinterpret_cast<char*>(tpk_e.data()), eSize, 0);
+
+    std::cout << "Sender: Received Public Key (N: " << nSize << " chars, E: " << eSize << " chars)." << std::endl;
+
+    SenderNode edgeDevice(tpk_n, tpk_e);
+    std::vector<uint8_t> sensorData = {0x48, 0x65, 0x6C, 0x6C, 0x6F}; // "Hello"
+
+    TransmissionPayload payload;
+    try {
+        payload = edgeDevice.transmitData(sensorData);
+    } catch (const std::exception& e) {
+        std::cerr << "Encryption failed: " << e.what() << std::endl;
+        closesocket(clientSocket);
+        WSACleanup();
+        return 1;
+    }
+
+    // Serialize and Send Data
     PayloadHeader header;
     header.encKeySize = static_cast<uint32_t>(payload.encryptedAesKey.size());
     header.encDataSize = static_cast<uint32_t>(payload.encryptedData.size());
