@@ -7,7 +7,7 @@
 
 class SAES {
 public:
-    // Initialize with a 256-bit key
+    // Initialize with a 128-bit key
     explicit SAES(const std::vector<uint8_t>& key);
 
     // Encrypts using CBC mode, PKCS7 padding, 7 rounds, and 3-thread pool
