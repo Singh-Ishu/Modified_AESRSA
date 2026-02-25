@@ -70,12 +70,42 @@ void SAES::processBlocksParallel(const std::vector<uint8_t>& input, std::vector<
             
             if (isEncrypting) {
                 uint8_t block[16];
-                for (int j = 0; j < 16; ++j) block[j] = inPtr[j] ^ currentIv[j];
+                block[0] = inPtr[0] ^ currentIv[0];
+                block[1] = inPtr[1] ^ currentIv[1];
+                block[2] = inPtr[2] ^ currentIv[2];
+                block[3] = inPtr[3] ^ currentIv[3];
+                block[4] = inPtr[4] ^ currentIv[4];
+                block[5] = inPtr[5] ^ currentIv[5];
+                block[6] = inPtr[6] ^ currentIv[6];
+                block[7] = inPtr[7] ^ currentIv[7];
+                block[8] = inPtr[8] ^ currentIv[8];
+                block[9] = inPtr[9] ^ currentIv[9];
+                block[10] = inPtr[10] ^ currentIv[10];
+                block[11] = inPtr[11] ^ currentIv[11];
+                block[12] = inPtr[12] ^ currentIv[12];
+                block[13] = inPtr[13] ^ currentIv[13];
+                block[14] = inPtr[14] ^ currentIv[14];
+                block[15] = inPtr[15] ^ currentIv[15];
                 encryptBlock(block, outPtr);
                 std::memcpy(currentIv.data(), outPtr, 16);
             } else {
                 decryptBlock(inPtr, outPtr);
-                for (int j = 0; j < 16; ++j) outPtr[j] ^= currentIv[j];
+                outPtr[0] ^= currentIv[0];
+                outPtr[1] ^= currentIv[1];
+                outPtr[2] ^= currentIv[2];
+                outPtr[3] ^= currentIv[3];
+                outPtr[4] ^= currentIv[4];
+                outPtr[5] ^= currentIv[5];
+                outPtr[6] ^= currentIv[6];
+                outPtr[7] ^= currentIv[7];
+                outPtr[8] ^= currentIv[8];
+                outPtr[9] ^= currentIv[9];
+                outPtr[10] ^= currentIv[10];
+                outPtr[11] ^= currentIv[11];
+                outPtr[12] ^= currentIv[12];
+                outPtr[13] ^= currentIv[13];
+                outPtr[14] ^= currentIv[14];
+                outPtr[15] ^= currentIv[15];
                 std::memcpy(currentIv.data(), inPtr, 16);
             }
         }

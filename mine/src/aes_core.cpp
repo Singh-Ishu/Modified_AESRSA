@@ -50,22 +50,94 @@ static const uint8_t Rcon[11] = {
 // Helper: Galois Field Multiplication
 inline uint8_t gf_mul(uint8_t a, uint8_t b) {
     uint8_t p = 0;
-    for (int counter = 0; counter < 8; counter++) {
-        if ((b & 1) != 0) p ^= a;
-        bool hi_bit_set = (a & 0x80) != 0;
-        a <<= 1;
-        if (hi_bit_set) a ^= 0x1b;
-        b >>= 1;
-    }
+    bool hi_bit_set;
+    
+    if ((b & 1) != 0) p ^= a;
+    hi_bit_set = (a & 0x80) != 0;
+    a <<= 1;
+    if (hi_bit_set) a ^= 0x1b;
+    b >>= 1;
+
+    if ((b & 1) != 0) p ^= a;
+    hi_bit_set = (a & 0x80) != 0;
+    a <<= 1;
+    if (hi_bit_set) a ^= 0x1b;
+    b >>= 1;
+
+    if ((b & 1) != 0) p ^= a;
+    hi_bit_set = (a & 0x80) != 0;
+    a <<= 1;
+    if (hi_bit_set) a ^= 0x1b;
+    b >>= 1;
+
+    if ((b & 1) != 0) p ^= a;
+    hi_bit_set = (a & 0x80) != 0;
+    a <<= 1;
+    if (hi_bit_set) a ^= 0x1b;
+    b >>= 1;
+
+    if ((b & 1) != 0) p ^= a;
+    hi_bit_set = (a & 0x80) != 0;
+    a <<= 1;
+    if (hi_bit_set) a ^= 0x1b;
+    b >>= 1;
+
+    if ((b & 1) != 0) p ^= a;
+    hi_bit_set = (a & 0x80) != 0;
+    a <<= 1;
+    if (hi_bit_set) a ^= 0x1b;
+    b >>= 1;
+
+    if ((b & 1) != 0) p ^= a;
+    hi_bit_set = (a & 0x80) != 0;
+    a <<= 1;
+    if (hi_bit_set) a ^= 0x1b;
+    b >>= 1;
+
+    if ((b & 1) != 0) p ^= a;
+    hi_bit_set = (a & 0x80) != 0;
+    a <<= 1;
+    if (hi_bit_set) a ^= 0x1b;
+    
     return p;
 }
 
 void SubBytes(State& state) {
-    for (int i = 0; i < 16; ++i) state[i] = sbox[state[i]];
+    state[0] = sbox[state[0]];
+    state[1] = sbox[state[1]];
+    state[2] = sbox[state[2]];
+    state[3] = sbox[state[3]];
+    state[4] = sbox[state[4]];
+    state[5] = sbox[state[5]];
+    state[6] = sbox[state[6]];
+    state[7] = sbox[state[7]];
+    state[8] = sbox[state[8]];
+    state[9] = sbox[state[9]];
+    state[10] = sbox[state[10]];
+    state[11] = sbox[state[11]];
+    state[12] = sbox[state[12]];
+    state[13] = sbox[state[13]];
+    state[14] = sbox[state[14]];
+    state[15] = sbox[state[15]];
 }
 
 void InvSubBytes(State& state) {
-    for (int i = 0; i < 16; ++i) state[i] = rsbox[state[i]];
+    state[0] = rsbox[state[0]];
+    state[1] = rsbox[state[1]];
+    state[2] = rsbox[state[2]];
+    state[3] = rsbox[state[3]];
+    state[4] = rsbox[state[4]];
+    state[5] = rsbox[state[5]];
+    state[6] = rsbox[state[6]];
+    state[7] = rsbox[state[7]];
+    state[8] = rsbox[state[8]];
+    state[9] = rsbox[state[9]];
+    state[10] = rsbox[state[10]];
+    state[11] = rsbox[state[11]];
+    state[12] = rsbox[state[12]];
+    state[13] = rsbox[state[13]];
+    state[14] = rsbox[state[14]];
+    state[15] = rsbox[state[15]];
 }
 
 void ShiftRows(State& state) {
@@ -94,30 +166,81 @@ void InvShiftRows(State& state) {
 
 void MixColumns(State& state) {
     uint8_t tmp[16];
-    for (int i = 0; i < 4; ++i) {
-        int col = i * 4;
-        tmp[col]     = gf_mul(0x02, state[col]) ^ gf_mul(0x03, state[col+1]) ^ state[col+2] ^ state[col+3];
-        tmp[col+1]   = state[col] ^ gf_mul(0x02, state[col+1]) ^ gf_mul(0x03, state[col+2]) ^ state[col+3];
-        tmp[col+2]   = state[col] ^ state[col+1] ^ gf_mul(0x02, state[col+2]) ^ gf_mul(0x03, state[col+3]);
-        tmp[col+3]   = gf_mul(0x03, state[col]) ^ state[col+1] ^ state[col+2] ^ gf_mul(0x02, state[col+3]);
-    }
+    
+    // Column 0
+    tmp[0] = gf_mul(0x02, state[0]) ^ gf_mul(0x03, state[1]) ^ state[2] ^ state[3];
+    tmp[1] = state[0] ^ gf_mul(0x02, state[1]) ^ gf_mul(0x03, state[2]) ^ state[3];
+    tmp[2] = state[0] ^ state[1] ^ gf_mul(0x02, state[2]) ^ gf_mul(0x03, state[3]);
+    tmp[3] = gf_mul(0x03, state[0]) ^ state[1] ^ state[2] ^ gf_mul(0x02, state[3]);
+
+    // Column 1
+    tmp[4] = gf_mul(0x02, state[4]) ^ gf_mul(0x03, state[5]) ^ state[6] ^ state[7];
+    tmp[5] = state[4] ^ gf_mul(0x02, state[5]) ^ gf_mul(0x03, state[6]) ^ state[7];
+    tmp[6] = state[4] ^ state[5] ^ gf_mul(0x02, state[6]) ^ gf_mul(0x03, state[7]);
+    tmp[7] = gf_mul(0x03, state[4]) ^ state[5] ^ state[6] ^ gf_mul(0x02, state[7]);
+
+    // Column 2
+    tmp[8] = gf_mul(0x02, state[8]) ^ gf_mul(0x03, state[9]) ^ state[10] ^ state[11];
+    tmp[9] = state[8] ^ gf_mul(0x02, state[9]) ^ gf_mul(0x03, state[10]) ^ state[11];
+    tmp[10]= state[8] ^ state[9] ^ gf_mul(0x02, state[10]) ^ gf_mul(0x03, state[11]);
+    tmp[11]= gf_mul(0x03, state[8]) ^ state[9] ^ state[10] ^ gf_mul(0x02, state[11]);
+
+    // Column 3
+    tmp[12]= gf_mul(0x02, state[12]) ^ gf_mul(0x03, state[13]) ^ state[14] ^ state[15];
+    tmp[13]= state[12] ^ gf_mul(0x02, state[13]) ^ gf_mul(0x03, state[14]) ^ state[15];
+    tmp[14]= state[12] ^ state[13] ^ gf_mul(0x02, state[14]) ^ gf_mul(0x03, state[15]);
+    tmp[15]= gf_mul(0x03, state[12]) ^ state[13] ^ state[14] ^ gf_mul(0x02, state[15]);
+
     std::memcpy(state.data(), tmp, 16);
 }
 
 void InvMixColumns(State& state) {
     uint8_t tmp[16];
-    for (int i = 0; i < 4; ++i) {
-        int col = i * 4;
-        tmp[col]   = gf_mul(0x0e, state[col]) ^ gf_mul(0x0b, state[col+1]) ^ gf_mul(0x0d, state[col+2]) ^ gf_mul(0x09, state[col+3]);
-        tmp[col+1] = gf_mul(0x09, state[col]) ^ gf_mul(0x0e, state[col+1]) ^ gf_mul(0x0b, state[col+2]) ^ gf_mul(0x0d, state[col+3]);
-        tmp[col+2] = gf_mul(0x0d, state[col]) ^ gf_mul(0x09, state[col+1]) ^ gf_mul(0x0e, state[col+2]) ^ gf_mul(0x0b, state[col+3]);
-        tmp[col+3] = gf_mul(0x0b, state[col]) ^ gf_mul(0x0d, state[col+1]) ^ gf_mul(0x09, state[col+2]) ^ gf_mul(0x0e, state[col+3]);
-    }
+    
+    // Column 0
+    tmp[0]   = gf_mul(0x0e, state[0]) ^ gf_mul(0x0b, state[1]) ^ gf_mul(0x0d, state[2]) ^ gf_mul(0x09, state[3]);
+    tmp[1]   = gf_mul(0x09, state[0]) ^ gf_mul(0x0e, state[1]) ^ gf_mul(0x0b, state[2]) ^ gf_mul(0x0d, state[3]);
+    tmp[2]   = gf_mul(0x0d, state[0]) ^ gf_mul(0x09, state[1]) ^ gf_mul(0x0e, state[2]) ^ gf_mul(0x0b, state[3]);
+    tmp[3]   = gf_mul(0x0b, state[0]) ^ gf_mul(0x0d, state[1]) ^ gf_mul(0x09, state[2]) ^ gf_mul(0x0e, state[3]);
+
+    // Column 1
+    tmp[4]   = gf_mul(0x0e, state[4]) ^ gf_mul(0x0b, state[5]) ^ gf_mul(0x0d, state[6]) ^ gf_mul(0x09, state[7]);
+    tmp[5]   = gf_mul(0x09, state[4]) ^ gf_mul(0x0e, state[5]) ^ gf_mul(0x0b, state[6]) ^ gf_mul(0x0d, state[7]);
+    tmp[6]   = gf_mul(0x0d, state[4]) ^ gf_mul(0x09, state[5]) ^ gf_mul(0x0e, state[6]) ^ gf_mul(0x0b, state[7]);
+    tmp[7]   = gf_mul(0x0b, state[4]) ^ gf_mul(0x0d, state[5]) ^ gf_mul(0x09, state[6]) ^ gf_mul(0x0e, state[7]);
+
+    // Column 2
+    tmp[8]   = gf_mul(0x0e, state[8]) ^ gf_mul(0x0b, state[9]) ^ gf_mul(0x0d, state[10]) ^ gf_mul(0x09, state[11]);
+    tmp[9]   = gf_mul(0x09, state[8]) ^ gf_mul(0x0e, state[9]) ^ gf_mul(0x0b, state[10]) ^ gf_mul(0x0d, state[11]);
+    tmp[10]  = gf_mul(0x0d, state[8]) ^ gf_mul(0x09, state[9]) ^ gf_mul(0x0e, state[10]) ^ gf_mul(0x0b, state[11]);
+    tmp[11]  = gf_mul(0x0b, state[8]) ^ gf_mul(0x0d, state[9]) ^ gf_mul(0x09, state[10]) ^ gf_mul(0x0e, state[11]);
+
+    // Column 3
+    tmp[12]  = gf_mul(0x0e, state[12]) ^ gf_mul(0x0b, state[13]) ^ gf_mul(0x0d, state[14]) ^ gf_mul(0x09, state[15]);
+    tmp[13]  = gf_mul(0x09, state[12]) ^ gf_mul(0x0e, state[13]) ^ gf_mul(0x0b, state[14]) ^ gf_mul(0x0d, state[15]);
+    tmp[14]  = gf_mul(0x0d, state[12]) ^ gf_mul(0x09, state[13]) ^ gf_mul(0x0e, state[14]) ^ gf_mul(0x0b, state[15]);
+    tmp[15]  = gf_mul(0x0b, state[12]) ^ gf_mul(0x0d, state[13]) ^ gf_mul(0x09, state[14]) ^ gf_mul(0x0e, state[15]);
+
     std::memcpy(state.data(), tmp, 16);
 }
 
 void AddRoundKey(State& state, const uint8_t* roundKey) {
-    for (int i = 0; i < 16; ++i) state[i] ^= roundKey[i];
+    state[0] ^= roundKey[0];
+    state[1] ^= roundKey[1];
+    state[2] ^= roundKey[2];
+    state[3] ^= roundKey[3];
+    state[4] ^= roundKey[4];
+    state[5] ^= roundKey[5];
+    state[6] ^= roundKey[6];
+    state[7] ^= roundKey[7];
+    state[8] ^= roundKey[8];
+    state[9] ^= roundKey[9];
+    state[10] ^= roundKey[10];
+    state[11] ^= roundKey[11];
+    state[12] ^= roundKey[12];
+    state[13] ^= roundKey[13];
+    state[14] ^= roundKey[14];
+    state[15] ^= roundKey[15];
 }
 
 std::vector<uint8_t> ExpandKey(const std::vector<uint8_t>& key, int rounds) {
@@ -132,9 +255,10 @@ std::vector<uint8_t> ExpandKey(const std::vector<uint8_t>& key, int rounds) {
     uint8_t temp[4];
 
     while (bytesGenerated < expandedSize) {
-        for (int i = 0; i < 4; i++) {
-            temp[i] = expandedKey[bytesGenerated - 4 + i];
-        }
+        temp[0] = expandedKey[bytesGenerated - 4];
+        temp[1] = expandedKey[bytesGenerated - 3];
+        temp[2] = expandedKey[bytesGenerated - 2];
+        temp[3] = expandedKey[bytesGenerated - 1];
 
         if (bytesGenerated % 16 == 0) {
             uint8_t t = temp[0];
@@ -144,10 +268,14 @@ std::vector<uint8_t> ExpandKey(const std::vector<uint8_t>& key, int rounds) {
             temp[3] = sbox[t];
         }
 
-        for (uint8_t i = 0; i < 4; i++) {
-            expandedKey[bytesGenerated] = expandedKey[bytesGenerated - 16] ^ temp[i];
-            bytesGenerated++;
-        }
+        expandedKey[bytesGenerated] = expandedKey[bytesGenerated - 16] ^ temp[0];
+        bytesGenerated++;
+        expandedKey[bytesGenerated] = expandedKey[bytesGenerated - 16] ^ temp[1];
+        bytesGenerated++;
+        expandedKey[bytesGenerated] = expandedKey[bytesGenerated - 16] ^ temp[2];
+        bytesGenerated++;
+        expandedKey[bytesGenerated] = expandedKey[bytesGenerated - 16] ^ temp[3];
+        bytesGenerated++;
     }
     return expandedKey;
 }
