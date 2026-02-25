@@ -1,0 +1,8 @@
+# Receiver
+g++ -I ./include ./apps/receiver.cpp ./src/m_rsa.cpp ./src/s_aes.cpp ./src/utils.cpp ./src/aes_core.cpp -o ./apps/receiver.exe -lws2_32 -lcrypto -lssl
+
+# Sender
+g++ -I ./include ./apps/sender.cpp ./src/m_rsa.cpp ./src/s_aes.cpp ./src/utils.cpp ./src/aes_core.cpp -o ./apps/sender.exe -lws2_32 -lcrypto -lssl
+
+# Runner
+g++ ./utils/runner.cpp -o ./utils/runner.exe
