@@ -1,19 +1,46 @@
 #include <windows.h>
 #include <iostream>
 #include <chrono>
+#include <string>
+
+std::string getAppsPath() {
+    char buffer[MAX_PATH];
+    GetModuleFileNameA(NULL, buffer, MAX_PATH);
+    std::string path(buffer);
+    size_t pos = path.find_last_of("\\/");
+    if (pos != std::string::npos) {
+        path = path.substr(0, pos); // utils
+        pos = path.find_last_of("\\/");
+        if (pos != std::string::npos) {
+            path = path.substr(0, pos); // benchmark
+            return path + "\\apps";
+        }
+    }
+    return ".\\apps";
+}
 
 int main() {
+    std::string appsPath = getAppsPath();
+    std::string receiverShell = appsPath + "\\receiver.exe";
+    std::string senderShell = appsPath + "\\sender.exe";
+
+    char recCmd[MAX_PATH];
+    strcpy(recCmd, receiverShell.c_str());
+    char senCmd[MAX_PATH];
+    strcpy(senCmd, senderShell.c_str());
+
     STARTUPINFOA siReceiver = { sizeof(STARTUPINFOA) };
     PROCESS_INFORMATION piReceiver;
 
     STARTUPINFOA siSender = { sizeof(STARTUPINFOA) };
     PROCESS_INFORMATION piSender;
 
-    std::cout << "[Runner] Starting Receiver node..." << std::endl;
+    std::cout << "[Runner] Starting Receiver node from " << receiverShell << std::endl;
 
     // Start Receiver
-    if (!CreateProcessA(NULL, (LPSTR)".\\receiver.exe", NULL, NULL, FALSE, 0, NULL, NULL, &siReceiver, &piReceiver)) {
-        std::cerr << "[Runner] Failed to start receiver. Error: " << GetLastError() << std::endl;
+    if (!CreateProcessA(NULL, recCmd, NULL, NULL, FALSE, 0, NULL, appsPath.c_str(), &siReceiver, &piReceiver)) {
+        DWORD err = GetLastError();
+        std::cerr << "[Runner] Failed to start receiver. Error: " << err << std::endl;
         return 1;
     }
 
@@ -25,8 +52,9 @@ int main() {
     auto startTime = std::chrono::high_resolution_clock::now();
 
     // Start Sender
-    if (!CreateProcessA(NULL, (LPSTR)".\\sender.exe", NULL, NULL, FALSE, 0, NULL, NULL, &siSender, &piSender)) {
-        std::cerr << "[Runner] Failed to start sender. Error: " << GetLastError() << std::endl;
+    if (!CreateProcessA(NULL, senCmd, NULL, NULL, FALSE, 0, NULL, appsPath.c_str(), &siSender, &piSender)) {
+        DWORD err = GetLastError();
+        std::cerr << "[Runner] Failed to start sender. Error: " << err << std::endl;
         TerminateProcess(piReceiver.hProcess, 1);
         return 1;
     }
