@@ -50,86 +50,85 @@ void SAES::decryptBlock(const uint8_t* input, uint8_t* output) const {
 
 std::vector<uint8_t> SAES::encrypt(const std::vector<uint8_t>& plaintext, const std::vector<uint8_t>& iv) {
     std::vector<uint8_t> output(plaintext.size());
-    processBlocksParallel(plaintext, output, iv, true);
+    processBlocksParallel(plaintext, output, iv);
     return output;
 }
 
 std::vector<uint8_t> SAES::decrypt(const std::vector<uint8_t>& ciphertext, const std::vector<uint8_t>& iv) {
     std::vector<uint8_t> output(ciphertext.size());
-    processBlocksParallel(ciphertext, output, iv, false);
+    processBlocksParallel(ciphertext, output, iv);
     return output;
 }
 
-void SAES::processBlocksParallel(const std::vector<uint8_t>& input, std::vector<uint8_t>& output, const std::vector<uint8_t>& iv, bool isEncrypting) {
-    size_t numBlocks = input.size() / 16;
+void SAES::processBlocksParallel(const std::vector<uint8_t>& input, std::vector<uint8_t>& output, const std::vector<uint8_t>& iv) {
+    if (input.empty()) return;
 
-    auto processChunk = [&](size_t startBlock, size_t endBlock, std::vector<uint8_t> currentIv) {
+    size_t numBlocks = (input.size() + 15) / 16;
+    unsigned int numThreads = std::thread::hardware_concurrency();
+    if (numThreads == 0) numThreads = 4;
+    if (numThreads > numBlocks) numThreads = numBlocks;
+
+    auto processChunk = [&](size_t startBlock, size_t endBlock) {
         for (size_t i = startBlock; i < endBlock; ++i) {
-            const uint8_t* inPtr = input.data() + (i * 16);
-            uint8_t* outPtr = output.data() + (i * 16);
+            uint8_t counter[16];
+            std::memcpy(counter, iv.data(), 16);
             
-            if (isEncrypting) {
-                uint8_t block[16];
-                block[0] = inPtr[0] ^ currentIv[0];
-                block[1] = inPtr[1] ^ currentIv[1];
-                block[2] = inPtr[2] ^ currentIv[2];
-                block[3] = inPtr[3] ^ currentIv[3];
-                block[4] = inPtr[4] ^ currentIv[4];
-                block[5] = inPtr[5] ^ currentIv[5];
-                block[6] = inPtr[6] ^ currentIv[6];
-                block[7] = inPtr[7] ^ currentIv[7];
-                block[8] = inPtr[8] ^ currentIv[8];
-                block[9] = inPtr[9] ^ currentIv[9];
-                block[10] = inPtr[10] ^ currentIv[10];
-                block[11] = inPtr[11] ^ currentIv[11];
-                block[12] = inPtr[12] ^ currentIv[12];
-                block[13] = inPtr[13] ^ currentIv[13];
-                block[14] = inPtr[14] ^ currentIv[14];
-                block[15] = inPtr[15] ^ currentIv[15];
-                encryptBlock(block, outPtr);
-                std::memcpy(currentIv.data(), outPtr, 16);
+            uint64_t carry = i;
+            for (int j = 15; j >= 0 && carry > 0; --j) {
+                carry += counter[j];
+                counter[j] = carry & 0xFF;
+                carry >>= 8;
+            }
+
+            uint8_t keystream[16];
+            encryptBlock(counter, keystream);
+
+            size_t inOffset = i * 16;
+            size_t remaining = input.size() - inOffset;
+            size_t bytesToProcess = remaining < 16 ? remaining : 16;
+
+            const uint8_t* inPtr = input.data() + inOffset;
+            uint8_t* outPtr = output.data() + inOffset;
+
+            if (bytesToProcess == 16) {
+                outPtr[0] = inPtr[0] ^ keystream[0];
+                outPtr[1] = inPtr[1] ^ keystream[1];
+                outPtr[2] = inPtr[2] ^ keystream[2];
+                outPtr[3] = inPtr[3] ^ keystream[3];
+                outPtr[4] = inPtr[4] ^ keystream[4];
+                outPtr[5] = inPtr[5] ^ keystream[5];
+                outPtr[6] = inPtr[6] ^ keystream[6];
+                outPtr[7] = inPtr[7] ^ keystream[7];
+                outPtr[8] = inPtr[8] ^ keystream[8];
+                outPtr[9] = inPtr[9] ^ keystream[9];
+                outPtr[10] = inPtr[10] ^ keystream[10];
+                outPtr[11] = inPtr[11] ^ keystream[11];
+                outPtr[12] = inPtr[12] ^ keystream[12];
+                outPtr[13] = inPtr[13] ^ keystream[13];
+                outPtr[14] = inPtr[14] ^ keystream[14];
+                outPtr[15] = inPtr[15] ^ keystream[15];
             } else {
-                decryptBlock(inPtr, outPtr);
-                outPtr[0] ^= currentIv[0];
-                outPtr[1] ^= currentIv[1];
-                outPtr[2] ^= currentIv[2];
-                outPtr[3] ^= currentIv[3];
-                outPtr[4] ^= currentIv[4];
-                outPtr[5] ^= currentIv[5];
-                outPtr[6] ^= currentIv[6];
-                outPtr[7] ^= currentIv[7];
-                outPtr[8] ^= currentIv[8];
-                outPtr[9] ^= currentIv[9];
-                outPtr[10] ^= currentIv[10];
-                outPtr[11] ^= currentIv[11];
-                outPtr[12] ^= currentIv[12];
-                outPtr[13] ^= currentIv[13];
-                outPtr[14] ^= currentIv[14];
-                outPtr[15] ^= currentIv[15];
-                std::memcpy(currentIv.data(), inPtr, 16);
+                for (size_t k = 0; k < bytesToProcess; ++k) {
+                    outPtr[k] = inPtr[k] ^ keystream[k];
+                }
             }
         }
     };
 
-    if (numBlocks < 3) {
-        processChunk(0, numBlocks, iv);
-    } else {
-        size_t blocksPerThread = numBlocks / 3;
-        size_t remainder = numBlocks % 3;
+    std::vector<std::thread> threads;
+    size_t blocksPerThread = numBlocks / numThreads;
+    size_t remainder = numBlocks % numThreads;
 
-        size_t end1 = blocksPerThread + (remainder > 0 ? 1 : 0);
-        size_t end2 = end1 + blocksPerThread + (remainder > 1 ? 1 : 0);
+    size_t currentStart = 0;
+    for (unsigned int i = 0; i < numThreads; ++i) {
+        size_t currentEnd = currentStart + blocksPerThread + (i < remainder ? 1 : 0);
+        if (currentEnd > currentStart) {
+            threads.emplace_back(processChunk, currentStart, currentEnd);
+        }
+        currentStart = currentEnd;
+    }
 
-        std::vector<uint8_t> iv1 = iv;
-        std::vector<uint8_t> iv2 = iv; 
-        std::vector<uint8_t> iv3 = iv; 
-
-        std::thread t1(processChunk, 0, end1, iv1);
-        std::thread t2(processChunk, end1, end2, iv2);
-        std::thread t3(processChunk, end2, numBlocks, iv3);
-
-        t1.join();
-        t2.join();
-        t3.join();
+    for (auto& t : threads) {
+        t.join();
     }
 }
